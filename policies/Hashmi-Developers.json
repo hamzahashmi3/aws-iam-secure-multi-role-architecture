@@ -1,68 +1,89 @@
 {
-    "Version": "2012-10-17",
-    "Statement": [
-      {
-        "Sid": "AllowListDevBucketOnly",
-        "Effect": "Allow",
-        "Action": [
-          "s3:ListBucket"
-        ],
-        "Resource": "arn:aws:s3:::hashmitech-dev-bucket"
-      },
-      {
-        "Sid": "AllowDevBucketObjectRW",
-        "Effect": "Allow",
-        "Action": [
-          "s3:GetObject",
-          "s3:PutObject",
-          "s3:DeleteObject",
-          "s3:GetObjectTagging",
-          "s3:PutObjectTagging"
-        ],
-        "Resource": "arn:aws:s3:::hashmitech-dev-bucket/*"
-      },
-      {
-        "Sid": "AllowCloudWatchLogsBasic",
-        "Effect": "Allow",
-        "Action": [
-          "logs:CreateLogGroup",
-          "logs:CreateLogStream",
-          "logs:PutLogEvents",
-          "logs:DescribeLogGroups",
-          "logs:DescribeLogStreams",
-          "logs:GetLogEvents",
-          "logs:FilterLogEvents"
-        ],
-        "Resource": "*"
-      },
-      {
-        "Sid": "AllowDescribeEC2",
-        "Effect": "Allow",
-        "Action": [
-          "ec2:DescribeInstances",
-          "ec2:DescribeImages",
-          "ec2:DescribeSecurityGroups",
-          "ec2:DescribeSubnets",
-          "ec2:DescribeVpcs",
-          "ec2:DescribeTags"
-        ],
-        "Resource": "*"
-      },
-      {
-        "Sid": "AllowStartStopOnlyDevTaggedInstances",
-        "Effect": "Allow",
-        "Action": [
-          "ec2:StartInstances",
-          "ec2:StopInstances",
-          "ec2:RebootInstances"
-        ],
-        "Resource": "arn:aws:ec2:*:*:instance/*",
-        "Condition": {
-          "StringEquals": {
-            "ec2:ResourceTag/Environment": "Dev"
-          }
+  "Version": "2012-10-17",
+  "Statement": [
+
+    {
+      "Sid": "AllowListDevBucketOnly",
+      "Effect": "Allow",
+      "Action": [
+        "s3:ListBucket"
+      ],
+      "Resource": "arn:aws:s3:::hashmi-bucket-dev"
+    },
+
+    {
+      "Sid": "AllowDevBucketObjectRW",
+      "Effect": "Allow",
+      "Action": [
+        "s3:GetObject",
+        "s3:PutObject",
+        "s3:DeleteObject",
+        "s3:GetObjectTagging",
+        "s3:PutObjectTagging"
+      ],
+      "Resource": "arn:aws:s3:::hashmi-bucket-dev/*"
+    },
+
+    {
+      "Sid": "AllowCloudWatchLogsBasic",
+      "Effect": "Allow",
+      "Action": [
+        "logs:CreateLogGroup",
+        "logs:CreateLogStream",
+        "logs:PutLogEvents",
+        "logs:DescribeLogGroups",
+        "logs:DescribeLogStreams",
+        "logs:GetLogEvents",
+        "logs:FilterLogEvents"
+      ],
+      "Resource": "*"
+    },
+
+    {
+      "Sid": "AllowCloudWatchAlarmsRead",
+      "Effect": "Allow",
+      "Action": [
+        "cloudwatch:DescribeAlarms",
+        "cloudwatch:DescribeAlarmsForMetric",
+        "cloudwatch:GetMetricData",
+        "cloudwatch:GetMetricStatistics",
+        "cloudwatch:ListMetrics"
+      ],
+      "Resource": "*"
+    },
+
+    {
+      "Sid": "AllowDescribeEC2ForConsole",
+      "Effect": "Allow",
+      "Action": [
+        "ec2:DescribeInstances",
+        "ec2:DescribeInstanceStatus",
+        "ec2:DescribeImages",
+        "ec2:DescribeSecurityGroups",
+        "ec2:DescribeSubnets",
+        "ec2:DescribeVpcs",
+        "ec2:DescribeTags",
+        "ec2:DescribeVolumes",
+        "ec2:DescribeVolumeStatus"
+      ],
+      "Resource": "*"
+    },
+
+    {
+      "Sid": "AllowStartStopOnlyDevTaggedInstances",
+      "Effect": "Allow",
+      "Action": [
+        "ec2:StartInstances",
+        "ec2:StopInstances",
+        "ec2:RebootInstances"
+      ],
+      "Resource": "arn:aws:ec2:*:*:instance/*",
+      "Condition": {
+        "StringEquals": {
+          "ec2:ResourceTag/Environment": "Dev"
         }
       }
-    ]
-  }
-  
+    }
+
+  ]
+}

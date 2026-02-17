@@ -2,16 +2,16 @@
 
 ## 📌 Project Overview
 
-This project demonstrates how to design and implement a secure AWS IAM architecture for a small company using:
+This project demonstrates the implementation of a secure AWS multi-role IAM architecture using best practices:
 
-- IAM Users
-- IAM Groups
-- Custom Policies (Least Privilege)
+- Least Privilege Access
 - MFA Enforcement
-- Tag-Based Access Control
-- CloudTrail for auditing
+- Group-Based Permission Design
+- Tag-Based EC2 Control
+- S3 Access Restriction
+- CloudTrail Audit Monitoring
 
-The goal of this project is to simulate a real-world secure AWS account structure suitable for production environments.
+The goal is to simulate a real-world secure AWS account suitable for production-grade governance.
 
 ---
 
@@ -21,172 +21,235 @@ The goal of this project is to simulate a real-world secure AWS account structur
 
 ---
 
-## 👥 User Roles Designed
+# 🔐 Phase 1 – Root Account Hardening
 
-### 1️⃣ Developers
-- Access to S3 dev bucket
-- CloudWatch Logs access
-- Start/Stop EC2 (only instances tagged `Environment=Dev`)
-- No IAM management permissions
+## 1️⃣ Root MFA Enabled
 
----
+To secure the AWS account, MFA was enabled on the root user.
 
-### 2️⃣ Interns
-- Read/Write access ONLY inside `intern-uploads/` folder
-- Explicitly denied object deletion
-- No access to other folders or buckets
+![Root MFA Enabled](screenshots/01-root-mfa-enabled.png)
 
 ---
 
-### 3️⃣ Auditors
-- Read-only IAM access
-- Read-only CloudTrail access
-- Read-only AWS Config access
-- No modification privileges
+## 2️⃣ Strong Password Policy
+
+Configured IAM password policy with:
+
+- Minimum 12 characters
+- Uppercase & lowercase required
+- Numbers required
+- Symbols required
+
+![Password Policy](screenshots/02-password-policy.png)
 
 ---
 
-## 🔐 Security Controls Implemented
+# 👤 Phase 2 – Administrative Separation
 
-- Root account MFA enabled
-- Strong IAM password policy enforced
-- Custom MFA Enforcement Policy (Condition-based)
-- Explicit Deny for sensitive actions
-- Tag-based EC2 control
-- CloudTrail enabled for monitoring and auditing
+## 3️⃣ Created IAM Admin User
+
+Created `admin1` with `AdministratorAccess` policy to avoid using root account for operations.
+
+![Admin User Created](screenshots/03-admin-user-created.png)
 
 ---
 
-## 🏷 Resources Created
+# 👥 Phase 3 – IAM Role Design
 
-### S3
-- Bucket: `hashmitech-dev-bucket`
-- Folder: `intern-uploads/`
+## 4️⃣ Created IAM Groups
 
-### IAM Groups
 - Developers
 - Interns
 - Auditors
 
-### IAM Policies
-- HashmiTech-EnforceMFA
-- HashmiTech-Developers
-- HashmiTech-Interns
-- HashmiTech-Auditors
-
-### Monitoring
-- CloudTrail Trail: `hashmitech-trail`
+![Groups Created](screenshots/04-groups-created.png)
 
 ---
 
-## ⚙️ Implementation Steps
+## 5️⃣ Created Custom Policies
 
-1. Enabled MFA on Root Account
-2. Configured IAM Password Policy
-3. Created IAM Groups
-4. Created Custom JSON Policies
-5. Attached Policies to Groups
-6. Created IAM Users and added to groups
-7. Created S3 bucket and intern folder
-8. Launched EC2 instance with tag `Environment=Dev`
-9. Enabled CloudTrail
-10. Performed permission-based testing
+- Hashmi-EnforceMFA
+- Hashmi-Developers
+- Hashmi-Interns
+- Hashmi-Auditors
+
+![Policies Created](screenshots/05-policies-created.png)
 
 ---
 
-## 🔐 Administrative Separation
+## 6️⃣ Attached Policies to Groups
 
-Root account was used only for:
+### Auditors Group
+
+![Auditors Policy Attached](screenshots/06-policies-attached-to-AuditorsGroup.png)
+
+### Developers Group
+
+![Developers Policy Attached](screenshots/07-policies-attached-to-DevelopersGroup.png)
+
+### Interns Group
+
+![Interns Policy Attached](screenshots/08-policies-attached-to-InternGroup.png)
+
+---
+
+## 7️⃣ Created Users and Assigned to Groups
+
+Users created:
+
+- dev1, dev2 → Developers
+- intern1 → Interns
+- auditor1 → Auditors
+
+![Users Created](screenshots/09-users-created.PNG)
+
+---
+
+# 🗂 Phase 4 – S3 Access Control
+
+## 8️⃣ Created S3 Bucket
+
+Bucket: `hashmit-bucket-dev`
+
+![S3 Bucket Created](screenshots/10-s3-bucket-created.png)
+
+---
+
+## 9️⃣ Created Secure Intern Folder
+
+Folder: `intern-uploads/`
+
+![Intern Folder](screenshots/11-intern-folder-created.png)
+
+---
+
+## 🔒 S3 Permission Testing
+
+### Developer IAM Access Denied
+
+Developers cannot access IAM dashboard.
+
+![Dev IAM Denied](screenshots/12-dev-iam-denied.png)
+
+---
+
+### Intern Upload Success
+
+Intern can upload files inside allowed folder.
+
+![Intern Upload](screenshots/13-intern-upload-successful.png)
+
+---
+
+### Intern Delete Denied
+
+Intern cannot delete objects (Explicit Deny in policy).
+
+![Intern Delete Denied](screenshots/14-intern-delete-denied.png)
+
+---
+
+# 🖥 Phase 5 – EC2 Tag-Based Control
+
+## 10️⃣ Tagged EC2 Instance
+
+Key: `Environment`  
+Value: `Dev`
+
+![EC2 Tag](screenshots/15-ec2-tag-dev.png)
+
+---
+
+## 11️⃣ Developer Start/Stop Allowed (Only Dev Tagged)
+
+![Dev EC2 Control](screenshots/16-dev-ec2-startstop-allowed.png)
+
+---
+
+# 📊 Phase 6 – CloudTrail Monitoring
+
+## 12️⃣ CloudTrail Enabled (Admin)
+
+Trail: `hashmi-trail`  
+Management Events: ON
+
+![CloudTrail Enabled](screenshots/17-cloudtrail-enabled.png)
+
+---
+
+## 13️⃣ Auditor Event Lookup
+
+Auditor can view CloudTrail logs but cannot modify resources.
+
+![Auditor CloudTrail](screenshots/18-auditor-cloudtrail-lookup.png)
+
+---
+
+# 🧠 Architecture Decisions
+
+## Why Group-Based Instead of Direct User Policies?
+
+Group-based access ensures scalable permission management. Users inherit permissions automatically, reducing administrative complexity.
+
+---
+
+## Why Explicit Deny?
+
+Explicit Deny overrides all Allow rules and prevents accidental privilege escalation (e.g., interns deleting data).
+
+---
+
+## Why Tag-Based EC2 Access?
+
+Developers can only operate on EC2 instances tagged `Environment=Dev`, protecting production workloads.
+
+---
+
+## Why MFA Enforcement Using Condition?
+
+If MFA is not present, access is denied except for MFA setup. This ensures strong authentication protection.
+
+---
+
+# 🔐 Administrative Model
+
+Root account used only for:
+
 - Initial MFA setup
 - Password policy configuration
-- IAM admin creation
+- Creating IAM admin user
 
-All operational resources were provisioned using an IAM Administrator user following AWS security best practices.
-
-## 🧪 Test Scenarios & Expected Results
-
-### ✅ Developers
-- Can upload/download objects in dev S3 bucket
-- Can start/stop EC2 only if tagged `Environment=Dev`
-- Cannot access IAM dashboard
-- Cannot modify users or policies
+All operational tasks were performed using IAM admin account.
 
 ---
 
-### ✅ Interns
-- Can upload/download only in `intern-uploads/`
-- ❌ Cannot delete any object
-- ❌ Cannot access other bucket areas
+# 📚 Key Learning Outcomes
+
+- IAM Policy Structure & Evaluation Logic
+- Condition-Based Access Control
+- Resource-Level Permission Enforcement
+- AWS Console Permission Dependencies
+- CloudTrail Audit Monitoring
+- Enterprise-Level IAM Design Principles
 
 ---
 
-### ✅ Auditors
-- Can view IAM users and policies
-- Can lookup CloudTrail events
-- Cannot create, update, or delete resources
-
----
-
-## 📸 Evidence
-
-Screenshots available in `/screenshots` folder:
-
-- dev-iam-denied.png
-- intern-delete-blocked.png
-- auditor-cloudtrail-view.png
-- mfa-enforcement-test.png
-
----
-
-## 💡 Architecture Decisions
-
-### Why group-based instead of direct user policy?
-Using IAM groups keeps permission management scalable and structured. Instead of attaching policies directly to each user, users inherit permissions from their group. This reduces administrative overhead and enforces consistency.
-
----
-
-### Why explicit deny?
-Explicit deny provides a strong safety mechanism. Even if an “Allow” permission exists elsewhere, the explicit deny overrides it. This prevents accidental privilege escalation (e.g., interns cannot delete objects even if additional permissions are granted later).
-
----
-
-### Why tag-based EC2 access?
-Tag-based access ensures developers can only control EC2 instances meant for the development environment. This protects production environments from accidental modification.
-
----
-
-### Why MFA enforced via condition?
-MFA enforcement improves account security. If MFA is not present, all actions are denied except MFA setup and password change. This reduces the risk of account compromise.
-
----
-
-## 📚 Key Learning Outcomes
-
-- Practical implementation of Least Privilege model
-- Understanding IAM policy evaluation logic
-- Using Conditions in AWS policies
-- Securing AWS accounts using MFA enforcement
-- Resource-level access control with tags
-- Audit readiness using CloudTrail
-
----
-
-## 🚀 Future Improvements
+# 🚀 Future Improvements
 
 - Implement Permission Boundaries
-- Add AWS Config compliance rules
-- Convert architecture to Terraform IaC
-- Add IAM Access Analyzer validation
-- Deploy CI/CD pipeline for policy validation
+- Convert IAM structure to Terraform (IaC)
+- Implement AWS Config compliance checks
+- Add Service Control Policies (SCP) for multi-account setup
+- Implement CI/CD for policy validation
 
 ---
 
-## 🧹 Cleanup (To Avoid Charges)
+# 🧹 Cleanup Steps
 
 1. Delete CloudTrail trail and log bucket
-2. Delete S3 bucket contents and bucket
-3. Delete EC2 test instances
-4. Remove IAM users, groups, and policies
+2. Terminate EC2 instance
+3. Delete S3 bucket contents
+4. Remove IAM users and groups
 
 ---
 
