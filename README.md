@@ -2,24 +2,62 @@
 
 ## 📌 Project Overview
 
-This project demonstrates the implementation of a secure AWS multi-role IAM architecture using best practices:
+This project demonstrates a real-world cloud infrastructure setup using Amazon EC2, focusing on secure deployment, resource management, and operational best practices.
 
-- Least Privilege Access
-- MFA Enforcement
-- Group-Based Permission Design
-- Tag-Based EC2 Control
-- S3 Access Restriction
-- CloudTrail Audit Monitoring
+A virtual server (EC2 instance) is provisioned and configured with proper networking, security groups, key-based authentication, and tagging strategy. The project also includes system initialization using user data scripts, monitoring using CloudWatch, and controlled access through IAM policies.
 
-The goal is to simulate a real-world secure AWS account suitable for production-grade governance.
+This setup simulates a production-like environment where compute resources are securely deployed, managed, and monitored, following AWS architectural best practices.
 
----
+## 🎯 Objectives
+
+- To provision and configure an EC2 instance following AWS best practices
+- To implement secure access using key pairs and security groups
+- To apply tagging strategy for resource management and access control
+- To configure user data scripts for automated instance setup
+- To enable monitoring and logging using Amazon CloudWatch
+- To restrict access using IAM roles and least privilege principles
+- To understand EC2 lifecycle operations (start, stop, reboot, terminate)
+- To simulate a real-world production environment for compute workloads
+
 
 ## 🏗 Architecture Diagram
 
 ![Architecture](architecture.png)
 
----
+## 🔹 IAM Architecture (Mermaid)
+
+```mermaid
+flowchart LR
+    A[IAM Policy<br/>Least Privilege] --> B[VPC]
+    C[Security Group<br/>Ingress Rules] --> D[EC2 Instance]
+    E[EC2 Key Pair<br/>SSH Access] -.-> D
+    B --> F[Public Subnet]
+    F --> D
+    G[User Data Script<br/>Bootstrap Commands] --> D
+    D --> H[CloudWatch Monitoring]
+    D --> I[IAM Role<br/>Least Privilege Access]
+    D --> J[Tag: Project = Portfolio]
+
+    H --> H1[CPU Utilization]
+    H --> H2[Disk Usage]
+```
+
+```mermaid
+flowchart TB
+    U[Admin / Engineer] -->|SSH| SG[Security Group]
+    SG --> EC2[EC2 Instance]
+
+    IAM[IAM Role] --> EC2
+    UD[User Data Script] --> EC2
+    TAG[Resource Tags] --> EC2
+
+    EC2 --> CW[CloudWatch]
+    CW --> M1[CPU Metrics]
+    CW --> M2[Disk Metrics]
+
+    VPC[VPC] --> SUB[Public Subnet]
+    SUB --> EC2
+```
 
 # 🔐 Phase 1 – Root Account Hardening
 
