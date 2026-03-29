@@ -19,44 +19,39 @@ This setup simulates a production-like environment where compute resources are s
 - To understand EC2 lifecycle operations (start, stop, reboot, terminate)
 - To simulate a real-world production environment for compute workloads
 
-
 ## 🏗 Architecture Diagram
 
 ![Architecture](architecture.png)
 
-## 🔹 IAM Architecture (Mermaid)
-
-```mermaid
-flowchart LR
-    A[IAM Policy<br/>Least Privilege] --> B[VPC]
-    C[Security Group<br/>Ingress Rules] --> D[EC2 Instance]
-    E[EC2 Key Pair<br/>SSH Access] -.-> D
-    B --> F[Public Subnet]
-    F --> D
-    G[User Data Script<br/>Bootstrap Commands] --> D
-    D --> H[CloudWatch Monitoring]
-    D --> I[IAM Role<br/>Least Privilege Access]
-    D --> J[Tag: Project = Portfolio]
-
-    H --> H1[CPU Utilization]
-    H --> H2[Disk Usage]
-```
+## 🔹 IAM Architecture (Flow-Chart)
 
 ```mermaid
 flowchart TB
-    U[Admin / Engineer] -->|SSH| SG[Security Group]
-    SG --> EC2[EC2 Instance]
+    A[Root User] --> B[MFA Enabled]
 
-    IAM[IAM Role] --> EC2
-    UD[User Data Script] --> EC2
-    TAG[Resource Tags] --> EC2
+    B --> C[Admin1 IAM User]
 
-    EC2 --> CW[CloudWatch]
-    CW --> M1[CPU Metrics]
-    CW --> M2[Disk Metrics]
+    C --> D[IAM Groups]
 
-    VPC[VPC] --> SUB[Public Subnet]
-    SUB --> EC2
+    D --> G1[Developers Group]
+    D --> G2[Interns Group]
+    D --> G3[Auditors Group]
+
+    G1 --> P1[Developers Policy]
+    G2 --> P2[Interns Policy]
+    G3 --> P3[Auditors Policy]
+
+    P1 --> S3[S3 Dev Bucket]
+    P1 --> EC2[EC2 Dev Instances]
+
+    P2 --> F1[Intern Folder Access]
+    P2 --> D1[Delete Denied]
+
+    P3 --> CT[CloudTrail Logs]
+    P3 --> IAM[IAM Read Only]
+
+    CT --> LOGS[Audit Monitoring]
+
 ```
 
 # 🔐 Phase 1 – Root Account Hardening
@@ -66,8 +61,6 @@ flowchart TB
 To secure the AWS account, MFA was enabled on the root user.
 
 ![Root MFA Enabled](screenshots/01-root-mfa-enabled.png)
-
----
 
 ## 2️⃣ Strong Password Policy
 
@@ -80,8 +73,6 @@ Configured IAM password policy with:
 
 ![Password Policy](screenshots/02-password-policy.png)
 
----
-
 # 👤 Phase 2 – Administrative Separation
 
 ## 3️⃣ Created IAM Admin User
@@ -89,8 +80,6 @@ Configured IAM password policy with:
 Created `admin1` with `AdministratorAccess` policy to avoid using root account for operations.
 
 ![Admin User Created](screenshots/03-admin-user-created.png)
-
----
 
 # 👥 Phase 3 – IAM Role Design
 
@@ -102,8 +91,6 @@ Created `admin1` with `AdministratorAccess` policy to avoid using root account f
 
 ![Groups Created](screenshots/04-groups-created.png)
 
----
-
 ## 5️⃣ Created Custom Policies
 
 - Hashmi-EnforceMFA
@@ -112,8 +99,6 @@ Created `admin1` with `AdministratorAccess` policy to avoid using root account f
 - Hashmi-Auditors
 
 ![Policies Created](screenshots/05-policies-created.png)
-
----
 
 ## 6️⃣ Attached Policies to Groups
 
@@ -129,8 +114,6 @@ Created `admin1` with `AdministratorAccess` policy to avoid using root account f
 
 ![Interns Policy Attached](screenshots/08-policies-attached-to-InternGroup.png)
 
----
-
 ## 7️⃣ Created Users and Assigned to Groups
 
 Users created:
@@ -141,8 +124,6 @@ Users created:
 
 ![Users Created](screenshots/09-users-created.PNG)
 
----
-
 # 🗂 Phase 4 – S3 Access Control
 
 ## 8️⃣ Created S3 Bucket
@@ -151,15 +132,11 @@ Bucket: `hashmit-bucket-dev`
 
 ![S3 Bucket Created](screenshots/10-s3-bucket-created.png)
 
----
-
 ## 9️⃣ Created Secure Intern Folder
 
 Folder: `intern-uploads/`
 
 ![Intern Folder](screenshots/11-intern-folder-created.png)
-
----
 
 ## 🔒 S3 Permission Testing
 
@@ -169,23 +146,17 @@ Developers cannot access IAM dashboard.
 
 ![Dev IAM Denied](screenshots/12-dev-iam-denied.png)
 
----
-
 ### Intern Upload Success
 
 Intern can upload files inside allowed folder.
 
 ![Intern Upload](screenshots/13-intern-upload-successful.png)
 
----
-
 ### Intern Delete Denied
 
 Intern cannot delete objects (Explicit Deny in policy).
 
 ![Intern Delete Denied](screenshots/14-intern-delete-denied.png)
-
----
 
 # 🖥 Phase 5 – EC2 Tag-Based Control
 
@@ -196,13 +167,9 @@ Value: `Dev`
 
 ![EC2 Tag](screenshots/15-ec2-tag-dev.png)
 
----
-
 ## 11️⃣ Developer Start/Stop Allowed (Only Dev Tagged)
 
 ![Dev EC2 Control](screenshots/16-dev-ec2-startstop-allowed.png)
-
----
 
 # 📊 Phase 6 – CloudTrail Monitoring
 
@@ -213,15 +180,11 @@ Management Events: ON
 
 ![CloudTrail Enabled](screenshots/17-cloudtrail-enabled.png)
 
----
-
 ## 13️⃣ Auditor Event Lookup
 
 Auditor can view CloudTrail logs but cannot modify resources.
 
 ![Auditor CloudTrail](screenshots/18-auditor-cloudtrail-lookup.png)
-
----
 
 # 🧠 Architecture Decisions
 
@@ -229,25 +192,17 @@ Auditor can view CloudTrail logs but cannot modify resources.
 
 Group-based access ensures scalable permission management. Users inherit permissions automatically, reducing administrative complexity.
 
----
-
 ## Why Explicit Deny?
 
 Explicit Deny overrides all Allow rules and prevents accidental privilege escalation (e.g., interns deleting data).
-
----
 
 ## Why Tag-Based EC2 Access?
 
 Developers can only operate on EC2 instances tagged `Environment=Dev`, protecting production workloads.
 
----
-
 ## Why MFA Enforcement Using Condition?
 
 If MFA is not present, access is denied except for MFA setup. This ensures strong authentication protection.
-
----
 
 # 🔐 Administrative Model
 
@@ -259,8 +214,6 @@ Root account used only for:
 
 All operational tasks were performed using IAM admin account.
 
----
-
 # 📚 Key Learning Outcomes
 
 - IAM Policy Structure & Evaluation Logic
@@ -270,8 +223,6 @@ All operational tasks were performed using IAM admin account.
 - CloudTrail Audit Monitoring
 - Enterprise-Level IAM Design Principles
 
----
-
 # 🚀 Future Improvements
 
 - Implement Permission Boundaries
@@ -280,16 +231,12 @@ All operational tasks were performed using IAM admin account.
 - Add Service Control Policies (SCP) for multi-account setup
 - Implement CI/CD for policy validation
 
----
-
 # 🧹 Cleanup Steps
 
 1. Delete CloudTrail trail and log bucket
 2. Terminate EC2 instance
 3. Delete S3 bucket contents
 4. Remove IAM users and groups
-
----
 
 ## 👨‍💻 Author
 
